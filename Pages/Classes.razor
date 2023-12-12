@@ -1,0 +1,127 @@
+﻿@using Assignment.Results;
+@using Microsoft.EntityFrameworkCore
+@using Assignment.Model
+@page "/"
+<h3>Classes</h3>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>ROOM NUMBER</th>
+            <th>CLASS Name</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var ss in GetClass())
+        {
+            <tr>
+                <td>@ss.roon_number</td>
+                <td>@ss.ClassName</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    public AppDbContext Context = new AppDbContext(new DbContextOptions<AppDbContext>());
+    private Enrollment Enrollment = new Enrollment();
+    private Student student = new Student();
+
+    public List<Specific_students> GetClass()
+    {
+        var s = Context.Class
+        .Include(x => x.Enrollments)
+        .Where(w => w.Enrollments.Count > 100)
+        .Select(c => new Specific_students
+            {
+                ClassName = c.name,
+                roon_number = c.room_number
+            })
+        .ToList();
+        return s;
+    }
+    // Question 1.b
+    public List<Student> GetStudents()
+    {
+        var studentsList = Context.Enrollment
+         .Include(s => s.Student)
+         .Include(e => e.Class)
+         .ThenInclude(c => c.Faculty)
+         .Where(s => s.Class.Faculty.deptid != 22)
+         .Select(s => new Student {
+            sid=s.sid,
+            major=s.Student.major
+         })
+         .ToList();
+        return studentsList;
+    }
+
+    public void asd()
+    {
+        
+        foreach (var item in Context.Student.ToList())
+        {
+
+            Context.Enrollment.Add(new Enrollment
+                {
+                    sid = item.sid,
+                    cid = 3
+                });
+        }
+
+        Context.SaveChanges();
+
+        // Question 1.a
+        var s = Context.Class
+        .Include(x => x.Enrollments)
+        .Where(w => w.Enrollments.Count > 100)
+        .ToList();
+
+
+        
+    }
+
+    protected override void OnInitialized()
+    {
+        
+
+        // Question 2.a
+        var studentsList2a = Context.Student
+       .Include(x => x.Enrollments)
+       .Where(x=>x.Enrollments == null)
+       .ToList();
+
+
+        // Question 2.c
+        var studentsList2c = Context.Student
+      .Include(x => x.Enrollments)
+      .Where(x => x.Enrollments.Count>2)
+
+      .Select(x=>new {x.sname,x.Enrollments.Count})
+      .ToList();
+
+
+        // Ques 2.d =
+
+        var studentsList2d = Context.Faculty
+        .Include(x => x.Class)
+        .Select(x => new FacultyWithCourses
+            {
+                FacultyName = x.fname,
+                CourseCount = x.Class.Count
+            })
+        .OrderByDescending(x=>x.CourseCount)
+        .ToList();
+
+        // Question 2.e
+        var studentsListY7 = Context.Enrollment
+       .Include(x => x.Class)
+       .ThenInclude(x => x.Faculty)
+       .Include(x => x.Student)
+       .Where(x=>x.Class.Faculty.fname=="CS")
+       .Select(x=>new {x.Student.sname })
+       .ToList();
+        
+
+        
+    }
+}
